@@ -72,6 +72,15 @@ def main() -> None:
         name_to_idx = {name: i for i, name in enumerate(keep)}
         class_names = keep
 
+    # DeepFish ships images across several zip archives, so they may extract
+    # into different subfolders. Build a recursive basename→path index so we
+    # find each image regardless of layout instead of silently skipping it.
+    img_index: dict[str, str] = {}
+    for root, _, fnames in os.walk(args.images_dir):
+        for name in fnames:
+            if name.lower().endswith((".jpg", ".jpeg", ".png")):
+                img_index.setdefault(name, os.path.join(root, name))
+
     # ---- deterministic train/val split ----
     img_ids = sorted(images.keys())
     random.seed(args.seed)
@@ -88,7 +97,9 @@ def main() -> None:
         fn = im["file_name"]
         W, H = im.get("width"), im.get("height")
         src = os.path.join(args.images_dir, fn)
-        if not os.path.exists(src) or not W or not H:
+        if not os.path.exists(src):
+            src = img_index.get(os.path.basename(fn), "")  # fall back to recursive lookup
+        if not src or not os.path.exists(src) or not W or not H:
             skipped += 1
             continue
         split = "val" if img_id in val_ids else "train"
