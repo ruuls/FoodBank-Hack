@@ -34,6 +34,8 @@ def main() -> None:
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--name", default="tidelift-catch")
+    ap.add_argument("--device", default="0", help="GPU id ('0'), '0,1' for multi-GPU, or 'cpu'")
+    ap.add_argument("--cache", action="store_true", help="cache images in RAM for faster epochs")
     ap.add_argument("--export-onnx", action="store_true", help="also export best.pt -> ONNX for edge")
     args = ap.parse_args()
 
@@ -43,7 +45,9 @@ def main() -> None:
         data=args.data,
         epochs=args.epochs,
         imgsz=args.imgsz,
-        batch=args.batch,
+        batch=args.batch,   # -1 = Ultralytics AutoBatch (recommended for yolov12x)
+        device=args.device,
+        cache=args.cache,
         name=args.name,
         patience=25,
         # Robustness to real dockside conditions — wet decks, glare, low/rainy
